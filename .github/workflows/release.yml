@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or tag to build'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            binary_name: mybin
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            binary_name: mybin.exe
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            binary_name: mybin
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+
+    - name: Build
+      run: |
+        cd mybin
+        go build -o ${{ matrix.binary_name }} .
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+
+    - name: Test
+      run: |
+        cd mybin
+        go test -v ./...
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: mybuild-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: mybin/${{ matrix.binary_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: ./artifacts
+
+    - name: Create zip files
+      run: |
+        cd artifacts
+        for dir in */; do
+          platform=$(basename "$dir")
+          cd "$dir"
+          zip -r "../${platform}.zip" *
+          cd ..
+        done
+
+    - name: Create Release
+      run: |
+        gh release create ${{ inputs.ref }} \
+          --title "Release ${{ inputs.ref }}" \
+          --generate-notes \
+          artifacts/*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
