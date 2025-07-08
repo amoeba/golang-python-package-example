@@ -54,7 +54,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: mybuild-${{ matrix.goos }}-${{ matrix.goarch }}
+        name: mybin-${{ matrix.goos }}-${{ matrix.goarch }}
         path: mybin/${{ matrix.binary_name }}
 
   release:
