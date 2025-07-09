@@ -20,24 +20,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        arch: [amd64, arm64]
+        os: [macos-latest, ubuntu-latest, windows-latest]
         include:
-          - os: ubuntu-latest
-            arch: amd64
-            goos: linux
-            goarch: amd64
-            binary_name: mybin
-          - os: ubuntu-latest
-            arch: arm64
-            goos: linux
-            goarch: amd64
-            binary_name: mybin
-          - os: windows-latest
-            goos: windows
-            goarch: amd64
-            binary_name: mybin.exe
           - os: macos-latest
+            arch: amd64
             goos: darwin
             goarch: amd64
             binary_name: mybin
@@ -46,6 +32,20 @@ jobs:
             goos: darwin
             goarch: arm64
             binary_name: mybin
+          - os: ubuntu-latest
+            arch: amd64
+            goos: linux
+            goarch: amd64
+            binary_name: mybin
+          - os: ubuntu-latest
+            arch: arm64
+            goos: linux
+            goarch: arm64
+            binary_name: mybin
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            binary_name: mybin.exe
 
     steps:
       - uses: actions/checkout@v4
