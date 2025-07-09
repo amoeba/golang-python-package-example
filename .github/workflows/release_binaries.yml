@@ -21,8 +21,15 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        arch: [amd64, arm64]
         include:
           - os: ubuntu-latest
+            arch: amd64
+            goos: linux
+            goarch: amd64
+            binary_name: mybin
+          - os: ubuntu-latest
+            arch: arm64
             goos: linux
             goarch: amd64
             binary_name: mybin
@@ -33,6 +40,11 @@ jobs:
           - os: macos-latest
             goos: darwin
             goarch: amd64
+            binary_name: mybin
+          - os: macos-latest
+            arch: arm64
+            goos: darwin
+            goarch: arm64
             binary_name: mybin
 
     steps:
