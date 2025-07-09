@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Branch or tag to build'
+        description: "Branch or tag to build"
         required: true
         type: string
       version:
-        description: 'Version to assign. Creates matching tag.'
+        description: "Version to assign. Creates matching tag."
         required: true
         type: string
 
@@ -36,64 +36,64 @@ jobs:
             binary_name: mybin
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        ref: ${{ inputs.ref }}
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.24'
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
 
-    - name: Build
-      run: |
-        go build -o ${{ matrix.binary_name }} .
-      env:
-        GOOS: ${{ matrix.goos }}
-        GOARCH: ${{ matrix.goarch }}
+      - name: Build
+        run: |
+          go build -o ${{ matrix.binary_name }} .
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
 
-    - name: Test
-      run: |
-        go test -v ./...
+      - name: Test
+        run: |
+          go test -v ./...
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: mybin-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: ${{ matrix.binary_name }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mybin-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: ${{ matrix.binary_name }}
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-      with:
-        ref: ${{ inputs.ref }}
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: ./artifacts
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
 
-    - name: Set executable permissions
-      run: |
-        find artifacts -name "mybin*" -type f -exec chmod +x {} \;
+      - name: Set executable permissions
+        run: |
+          find artifacts -name "mybin*" -type f -exec chmod +x {} \;
 
-    - name: Create zip files
-      run: |
-        cd artifacts
-        for dir in */; do
-          platform=$(basename "$dir")
-          cd "$dir"
-          zip -r "../${platform}-${{ inputs.version }}.zip" *
-          cd ..
-        done
+      - name: Create zip files
+        run: |
+          cd artifacts
+          for dir in */; do
+            platform=$(basename "$dir")
+            cd "$dir"
+            zip -r "../${platform}-${{ inputs.version }}.zip" *
+            cd ..
+          done
 
-    - name: Create Release
-      run: |
-        gh release create ${{ inputs.version }} \
-          --title "Binary Release ${{ inputs.version }}" \
-          --generate-notes \
-          artifacts/*.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        run: |
+          gh release create ${{ inputs.version }} \
+            --title "Binary Release ${{ inputs.version }}" \
+            --generate-notes \
+            artifacts/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
