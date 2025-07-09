@@ -124,7 +124,7 @@ def write_wheel(out_dir, *, name, version, tag, metadata, description, contents)
             **contents,
             f"{dist_info}/entry_points.txt": make_message(
                 [],
-                f"[console_scripts]\npython-{PACKAGE_NAME} = {PACKAGE_NAME}.__main__:dummy",  # TODO: Rename dummy
+                f"[console_scripts]\n{PACKAGE_NAME} = {PACKAGE_NAME}.__main__:dummy",  # TODO: Rename dummy
             ),
             f"{dist_info}/METADATA": make_message(
                 [
