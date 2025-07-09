@@ -22,14 +22,15 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 GITHUB_ORG = "amoeba"
 GITHUB_REPO = "golang-python-package-example"
 PACKAGE_NAME = "mybin"
-PLATFORMS = [
-    "win_arm64",
-    "win_amd64",
-    "manylinux_2_12_x86_64",
-    "manylinux_2_17_aarch64",  # TODO: What is 2_12/2_17 and why is 2_17 required for aarch64
-    "macosx_12_0_x86_64",
-    "macosx_12_0_arm64",
-]
+
+# Map Golang GOOS and GOARCH to Python packaging platforms
+PLATFORMS_MAP = {
+    "windows-amd64": "win_amd64",
+    "linux-amd64": "manylinux_2_12_x86_64",
+    "linux-arm64": "manylinux_2_17_aarch64",  # TODO: What is 2_12/2_17 and why is 2_17 required for aarch64
+    "darwin-amd64": "macosx_12_0_x86_64",
+    "darwin-arm64": "macosx_12_0_arm64",
+}
 
 
 def get_latest_github_release(repo_owner, repo_name):
@@ -146,7 +147,7 @@ def write_wheel(out_dir, *, name, version, tag, metadata, description, contents)
     )
 
 
-def create_wheel(version: str, archive: bytes):
+def create_wheel(version: str, platform: str, archive: bytes):
     contents = {}
     contents[f"{PACKAGE_NAME}/__init__.py"] = b""
 
@@ -186,7 +187,6 @@ def dummy(): """Dummy function for an entrypoint. Zig is executed as a side effe
             "ascii"
         )
     )
-    platform = "macosx_12_0_arm64"
     description = "TOOD"
     write_wheel(
         "./out",
@@ -204,29 +204,32 @@ def dummy(): """Dummy function for an entrypoint. Zig is executed as a side effe
     )
 
 
-def get_and_verify_zip(version: str) -> bytes:
-    release_info = get_latest_github_release(GITHUB_ORG, GITHUB_REPO)
-    asset = release_info["assets"][0]
-    archive_url = asset["download_url"]
-    print(f"Creating wheel for asset: {asset}")
-
-    with urllib.request.urlopen(archive_url) as request:
-        archive = request.read()
-        actual_hash = hashlib.sha256(archive).hexdigest()
-        expected_hash = asset["digest"].split(":")[1]
-        if actual_hash != expected_hash:
-            raise Exception(
-                f"Hash mismatch. Expected {expected_hash}, got {actual_hash}."
-            )
-
-    return archive
-
-
 def create_wheels(version):
-    # TODO: Create wheels for each platform we pass in
-    archive = get_and_verify_zip(version)
-    wheel_version = "0.1"
-    create_wheel(wheel_version, archive)
+    # get latest release info
+    release_info = get_latest_github_release(GITHUB_ORG, GITHUB_REPO)
+
+    for asset in release_info["assets"]:
+        tokens = asset["name"].split("-")
+        platform_os = tokens[1]
+        platform_arch = tokens[2]
+        version = ".".join(tokens[3].split(".")[:-1])
+        archive_url = asset["download_url"]
+
+        print(f"Creating wheel for asset: {asset}")
+
+        with urllib.request.urlopen(archive_url) as request:
+            archive = request.read()
+
+            # Verify hashes match
+            actual_hash = hashlib.sha256(archive).hexdigest()
+            expected_hash = asset["digest"].split(":")[1]
+            if actual_hash != expected_hash:
+                raise Exception(
+                    f"Hash mismatch. Expected {expected_hash}, got {actual_hash}."
+                )
+
+        target_platform = PLATFORMS_MAP[f"{platform_os}-{platform_arch}"]
+        create_wheel(version, target_platform, archive)
 
 
 def parse_args() -> argparse.ArgumentParser:
