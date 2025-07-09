@@ -92,7 +92,7 @@ jobs:
     - name: Create Release
       run: |
         gh release create ${{ inputs.version }} \
-          --title "Release ${{ inputs.version }}" \
+          --title "Binary Release ${{ inputs.version }}" \
           --generate-notes \
           artifacts/*.zip
       env:
