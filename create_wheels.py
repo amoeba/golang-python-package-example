@@ -204,9 +204,12 @@ def dummy(): """Dummy function for an entrypoint. Zig is executed as a side effe
     )
 
 
-def create_wheels(version):
+def create_wheels(binary_version, wheel_version):
     # get latest release info
     release_info = get_latest_github_release(GITHUB_ORG, GITHUB_REPO)
+
+    if release_info is None:
+        raise Exception("No release found")
 
     for asset in release_info["assets"]:
         tokens = asset["name"].split("-")
@@ -229,15 +232,20 @@ def create_wheels(version):
                 )
 
         target_platform = PLATFORMS_MAP[f"{platform_os}-{platform_arch}"]
-        create_wheel(version, target_platform, archive)
+        create_wheel(wheel_version, target_platform, archive)
 
 
 def parse_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--version",
+        "--binary_version",
         default="latest",
-        help="Version to package. Use 'latest' for latest release or 'main' for the latest build on the main branch.",
+        help="Version of the binary to create wheels for. Use 'latest' for latest release.",
+    )
+    parser.add_argument(
+        "--wheel_version",
+        default="same",
+        help="Version to give the wheels. Defaults to using the same version as the binary but can be overridden.",
     )
 
     return parser
@@ -245,7 +253,7 @@ def parse_args() -> argparse.ArgumentParser:
 
 def main():
     args = parse_args().parse_args()
-    create_wheels(args.version)
+    create_wheels(args.binary_version, args.wheel_version)
 
 
 if __name__ == "__main__":
