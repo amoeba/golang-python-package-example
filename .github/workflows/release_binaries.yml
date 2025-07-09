@@ -60,7 +60,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: mybin-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: mybin/${{ matrix.binary_name }}
+        path: ${{ matrix.binary_name }}
 
   release:
     needs: build
@@ -74,6 +74,10 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: ./artifacts
+
+    - name: Set executable permissions
+      run: |
+        find artifacts -name "mybin*" -type f -exec chmod +x {} \;
 
     - name: Create zip files
       run: |
