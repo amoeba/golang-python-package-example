@@ -22,6 +22,14 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 GITHUB_ORG = "amoeba"
 GITHUB_REPO = "golang-python-package-example"
 PACKAGE_NAME = "mybin"
+PLATFORMS = [
+    "win_arm64",
+    "win_amd64",
+    "manylinux_2_12_x86_64",
+    "manylinux_2_17_aarch64",  # TODO: What is 2_12/2_17 and why is 2_17 required for aarch64
+    "macosx_12_0_x86_64",
+    "macosx_12_0_arm64",
+]
 
 
 def get_latest_github_release(repo_owner, repo_name):
@@ -178,7 +186,7 @@ def dummy(): """Dummy function for an entrypoint. Zig is executed as a side effe
             "ascii"
         )
     )
-    platform = "TODO"
+    platform = "macosx_12_0_arm64"
     description = "TOOD"
     write_wheel(
         "./out",
@@ -217,7 +225,8 @@ def get_and_verify_zip(version: str) -> bytes:
 def create_wheels(version):
     # TODO: Create wheels for each platform we pass in
     archive = get_and_verify_zip(version)
-    create_wheel(version, archive)
+    wheel_version = "0.1"
+    create_wheel(wheel_version, archive)
 
 
 def parse_args() -> argparse.ArgumentParser:
