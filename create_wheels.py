@@ -33,9 +33,9 @@ PLATFORMS_MAP = {
 }
 
 
-def get_latest_github_release(repo_owner, repo_name):
-    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/latest"
-
+def get_github_release(repo_owner, repo_name, binary_version):
+    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/tags/{binary_version}"
+    print(url)
     try:
         with urllib.request.urlopen(url) as response:
             data = json.loads(response.read().decode())
@@ -205,8 +205,7 @@ def dummy(): """Dummy function for an entrypoint. Zig is executed as a side effe
 
 
 def create_wheels(binary_version, wheel_version):
-    # get latest release info
-    release_info = get_latest_github_release(GITHUB_ORG, GITHUB_REPO)
+    release_info = get_github_release(GITHUB_ORG, GITHUB_REPO, binary_version)
 
     if release_info is None:
         raise Exception("No release found")
@@ -216,6 +215,7 @@ def create_wheels(binary_version, wheel_version):
         platform_os = tokens[1]
         platform_arch = tokens[2]
         version = ".".join(tokens[3].split(".")[:-1])
+        assert version == binary_version, f"Version mismatch: {version} != {binary_version}"
         archive_url = asset["download_url"]
 
         print(f"Creating wheel for asset: {asset}")
@@ -239,8 +239,7 @@ def parse_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--binary_version",
-        default="latest",
-        help="Version of the binary to create wheels for. Use 'latest' for latest release.",
+        help="Version of the binary to create wheels for. Should be a tag name.",
     )
     parser.add_argument(
         "--wheel_version",
