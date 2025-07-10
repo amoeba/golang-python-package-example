@@ -22,22 +22,18 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            arch: amd64
             goos: darwin
             goarch: amd64
             binary_name: mybin
           - os: macos-latest
-            arch: arm64
             goos: darwin
             goarch: arm64
             binary_name: mybin
           - os: ubuntu-latest
-            arch: amd64
             goos: linux
             goarch: amd64
             binary_name: mybin
           - os: ubuntu-latest
-            arch: arm64
             goos: linux
             goarch: arm64
             binary_name: mybin
