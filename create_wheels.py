@@ -228,7 +228,7 @@ def entry_point(): """This just gives us a name to import."""
         metadata=[
             (
                 "Summary",
-                "This package is a demonstration of packaging a Golang executable in a Python package.",
+                "This package is just a demonstration.",
             ),
             ('Description-Content-Type', 'text/markdown'),
             ('License-Expression', 'Apache-2.0'),
