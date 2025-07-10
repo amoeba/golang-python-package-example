@@ -163,7 +163,14 @@ def create_wheel(version: str, platform: str, archive: bytes):
     contents = {}
     contents[f"{PACKAGE_NAME}/__init__.py"] = b""
 
-    # Find the binary path
+    # Handle license files, ensuring we don't miss any
+    required_license_paths = [
+        "LICENSE",
+    ]
+    license_files = {}
+    found_license_files = set()
+
+    # Scan the binary archive and extract what we need from it
     bin_prefix = PACKAGE_NAME
     bin_path = None
     for entry_name, entry_mode, entry_data in iter_archive_contents(archive):
@@ -176,6 +183,11 @@ def create_wheel(version: str, platform: str, archive: bytes):
 
         if entry_name.startswith(bin_prefix):
             bin_path = entry_name
+
+        # Include license files
+        if entry_name in required_license_paths:
+                license_files[entry_name] = entry_data
+                found_license_files.add(entry_name)
 
     # Dynamcially create __main__.py
     if bin_path is None:
@@ -198,6 +210,15 @@ def entry_point(): """This just gives us a name to import."""
     # Set the content of the PyPi README as the description
     with open('README.pypi.md') as f:
         description = f.read()
+
+    # Add licenses we found
+    dist_info = f'{PACKAGE_NAME}-{version}.dist-info'
+    for license_path, license_data in license_files.items():
+        contents[f'{dist_info}/licenses/{license_path}'] = license_data
+
+    missing_licenses = set(required_license_paths) - found_license_files
+    if missing_licenses:
+        raise RuntimeError(f"Missing licenses: {missing_licenses}")
 
     write_wheel(
         OUT_DIR,
