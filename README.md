@@ -25,6 +25,7 @@ The process to create wheels has just a few steps:
 
 4. Verify the wheels work by running the `test_wheels.yml` workflow.
 
+    Note: PyPi takes a few minutes to index wheels so it may be best to wait a few minutes after (3) before moving on to this step.
     The workflow has two parameters:
 
     - `package_name`: The name of the package on Test PyPi (e.g., `mybin`)
