@@ -20,27 +20,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: ["ubuntu-latest"] # we can cross-compile
+        goos: ["darwin", "linux", "windows"]
+        goarch: ["amd64", "arm64"]
         include:
-          - os: macos-latest
-            goos: darwin
-            goarch: amd64
-            binary_name: mybin
-          - os: macos-latest
-            goos: darwin
-            goarch: arm64
-            binary_name: mybin
-          - os: ubuntu-latest
-            goos: linux
-            goarch: amd64
-            binary_name: mybin
-          - os: ubuntu-latest
-            goos: linux
-            goarch: arm64
-            binary_name: mybin
-          - os: windows-latest
-            goos: windows
-            goarch: amd64
-            binary_name: mybin.exe
+          - goarch: "darwin"
+            binary_name: "mybin"
+          - goarch: "linux"
+            binary_name: "mybin"
+          - goarch: "windows"
+            binary_name: "mybin.exe"
 
     steps:
       - uses: actions/checkout@v4
