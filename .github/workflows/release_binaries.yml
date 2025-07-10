@@ -17,10 +17,9 @@ permissions:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest # we can cross-compile
     strategy:
       matrix:
-        os: ["ubuntu-latest"] # we can cross-compile
         goos: ["darwin", "linux", "windows"]
         goarch: ["amd64", "arm64"]
         include:
