@@ -84,21 +84,20 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./artifacts
+          path: ./artifact
 
       - name: Set executable permissions
         run: |
-          find artifacts -name "mybin*" -type f -exec chmod +x {} \;
+          find artifact -name "mybin*" -type f -exec chmod +x {} \;
 
-      - name: Create zip files
+      - name: Create zip archive
         run: |
-          cd artifacts
-          for dir in */; do
-            platform=$(basename "$dir")
-            cd "$dir"
-            zip -r "../${platform}-${{ inputs.version }}.zip" *
-            cd ..
-          done
+          platform=$(basename "artifact/*")
+          mkdir package
+          cp LICENSE package/LICENSE
+          cp README-mybin.md package/README.md
+          cp artifact/* package/
+          zip -r "${platform}-${{ inputs.version }}.zip" package/*
 
       - name: Create Release
         run: |
