@@ -23,11 +23,11 @@ jobs:
         goos: ["darwin", "linux", "windows"]
         goarch: ["amd64", "arm64"]
         include:
-          - goarch: "darwin"
+          - goos: "darwin"
             binary_name: "mybin"
-          - goarch: "linux"
+          - goos: "linux"
             binary_name: "mybin"
-          - goarch: "windows"
+          - goos: "windows"
             binary_name: "mybin.exe"
 
     steps:
