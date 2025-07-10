@@ -96,7 +96,7 @@ jobs:
           for artifact in artifacts/*; do
             platform=$(basename "$artifact")
             binary_file=$(find "$artifact" -name "mybin*" -type f)
-            zip "${platform}-${{ inputs.version }}.zip" "$binary_file" README.md LICENSE
+            zip "${platform}-${{ inputs.version }}.zip" -j "$binary_file" README.md LICENSE
           done
 
       - name: Create Release
