@@ -84,11 +84,11 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./artifact
+          path: ./artifacts
 
       - name: Set executable permissions
         run: |
-          find artifact -name "mybin*" -type f -exec chmod +x {} \;
+          find artifacts -name "mybin*" -type f -exec chmod +x {} \;
 
       - name: Create zip archive with extra files
         run: |
