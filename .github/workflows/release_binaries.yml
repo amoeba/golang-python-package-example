@@ -92,7 +92,7 @@ jobs:
 
       - name: Create zip archive with extra files
         run: |
-          mv README-mybin.md README.md
+          mv README.pypi.md README.md
           for artifact in artifacts/*; do
             platform=$(basename "$artifact")
             binary_file=$(find "$artifact" -name "mybin*" -type f)

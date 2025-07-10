@@ -47,7 +47,7 @@ Creating wheel for asset: {'name': 'mybin-windows-amd64-0.1.zip', 'download_url'
 Which produces:
 
 ```sh
-$ ls -1 out
+$ ls -1 dist
 mybin-0.1.1-py3-none-macosx_12_0_arm64.whl
 mybin-0.1.1-py3-none-macosx_12_0_x86_64.whl
 mybin-0.1.1-py3-none-manylinux_2_12_x86_64.whl

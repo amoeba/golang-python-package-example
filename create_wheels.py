@@ -23,19 +23,34 @@ GITHUB_ORG = "amoeba"
 GITHUB_REPO = "golang-python-package-example"
 PACKAGE_NAME = "mybin"
 
+# Where we write wheels to
+OUT_DIR="./dist"
+
 # Map Golang GOOS and GOARCH to Python packaging platforms
 PLATFORMS_MAP = {
     "windows-amd64": "win_amd64",
     "linux-amd64": "manylinux_2_12_x86_64",
-    "linux-arm64": "manylinux_2_17_aarch64",  # TODO: What is 2_12/2_17 and why is 2_17 required for aarch64
+    "linux-arm64": "manylinux_2_17_aarch64",
     "darwin-amd64": "macosx_12_0_x86_64",
     "darwin-arm64": "macosx_12_0_arm64",
 }
 
 
-def get_github_release(repo_owner, repo_name, binary_version):
-    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/tags/{binary_version}"
-    print(url)
+def get_github_release(repo_owner, repo_name, release_tag):
+    """
+    Get release and asset information for a release by version.
+
+    Args:
+        repo_owner (str): The owner of the GitHub repository.
+        repo_name (str): The name of the GitHub repository.
+        release_tag (str): The release tag to fetch.
+
+    Returns:
+        dict: A dictionary containing release information and asset details.
+    """
+
+    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases/tags/{release_tag}"
+
     try:
         with urllib.request.urlopen(url) as response:
             data = json.loads(response.read().decode())
@@ -44,7 +59,7 @@ def get_github_release(repo_owner, repo_name, binary_version):
             "tag_name": data["tag_name"],
             "name": data["name"],
             "published_at": data["published_at"],
-            "assets": [],
+            "assets": [], # Filled in next...
         }
 
         for asset in data["assets"]:
@@ -94,10 +109,7 @@ class ReproducibleWheelFile(WheelFile):
             if zinfo_or_arcname.endswith(".dist-info/RECORD"):
                 zinfo.external_attr = 0o0664 << 16
 
-        # TODO: Understand what these are actually doing
         zinfo.compress_type = ZIP_DEFLATED
-        zinfo.date_time = (1980, 1, 1, 0, 0, 0)
-        zinfo.create_system = 3
         super().writestr(zinfo, data, *args, **kwargs)
 
 
@@ -124,11 +136,11 @@ def write_wheel(out_dir, *, name, version, tag, metadata, description, contents)
             **contents,
             f"{dist_info}/entry_points.txt": make_message(
                 [],
-                f"[console_scripts]\n{PACKAGE_NAME} = {PACKAGE_NAME}.__main__:dummy",  # TODO: Rename dummy
+                f"[console_scripts]\n{PACKAGE_NAME} = {PACKAGE_NAME}.__main__:entry_point",
             ),
             f"{dist_info}/METADATA": make_message(
                 [
-                    ("Metadata-Version", "2.4"),  # TODO: Is 2.4 right?
+                    ("Metadata-Version", "2.4"),
                     ("Name", name),
                     ("Version", version),
                     *filtered_metadata,
@@ -151,15 +163,11 @@ def create_wheel(version: str, platform: str, archive: bytes):
     contents = {}
     contents[f"{PACKAGE_NAME}/__init__.py"] = b""
 
-    # TODO: Scan all files? How do I want to scan?
-    bin_prefix = "mybin"
+    # Find the binary path
+    bin_prefix = PACKAGE_NAME
+    bin_path = None
     for entry_name, entry_mode, entry_data in iter_archive_contents(archive):
-        # TODO: Why did zig do this next line?
-        # entry_name = "/".join(entry_name.split("/")[1:])
-
         if not entry_name:
-            continue
-        if entry_name.startswith("doc/"):
             continue
 
         zip_info = ZipInfo(f"{PACKAGE_NAME}/{entry_name}")
@@ -169,10 +177,9 @@ def create_wheel(version: str, platform: str, archive: bytes):
         if entry_name.startswith(bin_prefix):
             bin_path = entry_name
 
-    # __init__.py
-    # TODO
-
-    # __main__.py
+    # Dynamcially create __main__.py
+    if bin_path is None:
+        raise ValueError("No binary found in archive")
     contents[f"{PACKAGE_NAME}/__main__.py"] = (
         f'''\
 import os, sys
@@ -182,22 +189,30 @@ if os.name == 'posix':
 else:
     import subprocess; sys.exit(subprocess.call(argv))
 
-def dummy(): """Dummy function for an entrypoint. Zig is executed as a side effect of the import."""
+def entry_point(): """This just gives us a name to import."""
 '''.encode(
             "ascii"
         )
     )
-    description = "TOOD"
+
+    # Set the content of the PyPi README as the description
+    with open('README.pypi.md') as f:
+        description = f.read()
+
     write_wheel(
-        "./out",
+        OUT_DIR,
         name=PACKAGE_NAME,
         version=version,
         tag=f"py3-none-{platform}",
         metadata=[
             (
                 "Summary",
-                "TODO",
+                "This package is a demonstration of packaging a Golang executable in a Python package.",
             ),
+            ('Description-Content-Type', 'text/markdown'),
+            ('License-Expression', 'Apache-2.0'),
+            ('License-File', 'LICENSE'),
+            ('Requires-Python', '~=3.5'),
         ],
         description=description,
         contents=contents,
@@ -208,7 +223,7 @@ def create_wheels(binary_version, wheel_version):
     release_info = get_github_release(GITHUB_ORG, GITHUB_REPO, binary_version)
 
     if release_info is None:
-        raise Exception("No release found")
+        raise Exception(f"Release for version {binary_version} not found!")
 
     for asset in release_info["assets"]:
         tokens = asset["name"].split("-")
