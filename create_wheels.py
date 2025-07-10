@@ -191,7 +191,8 @@ def create_wheel(version: str, platform: str, archive: bytes):
 
     # Dynamcially create __main__.py
     if bin_path is None:
-        raise ValueError("No binary found in archive")
+        raise RuntimeError("No binary found in archive")
+
     contents[f"{PACKAGE_NAME}/__main__.py"] = (
         f'''\
 import os, sys
