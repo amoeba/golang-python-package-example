@@ -90,14 +90,13 @@ jobs:
         run: |
           find artifact -name "mybin*" -type f -exec chmod +x {} \;
 
-      - name: Create zip archive
+      - name: Create zip archive with extra files
         run: |
-          platform=$(basename "artifact/*")
-          mkdir package
-          cp LICENSE package/LICENSE
-          cp README-mybin.md package/README.md
-          cp artifact/* package/
-          zip -r "${platform}-${{ inputs.version }}.zip" package/*
+          for artifact in artifacts/*; do
+            platform=$(basename "$artifact")
+            mv README-mybin.md README.md
+            zip "${platform}-${{ inputs.version }}.zip" "$artifact" README.md LICENSE
+          done
 
       - name: Create Release
         run: |
