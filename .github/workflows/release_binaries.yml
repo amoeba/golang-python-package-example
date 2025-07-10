@@ -92,10 +92,11 @@ jobs:
 
       - name: Create zip archive with extra files
         run: |
+          mv README-mybin.md README.md
           for artifact in artifacts/*; do
             platform=$(basename "$artifact")
-            mv README-mybin.md README.md
-            zip "${platform}-${{ inputs.version }}.zip" "$artifact" README.md LICENSE
+            binary_file=$(find "$artifact" -name "mybin*" -type f)
+            zip "${platform}-${{ inputs.version }}.zip" "$binary_file" README.md LICENSE
           done
 
       - name: Create Release
