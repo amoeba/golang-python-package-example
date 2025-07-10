@@ -104,6 +104,6 @@ jobs:
           gh release create ${{ inputs.version }} \
             --title "Binary Release ${{ inputs.version }}" \
             --generate-notes \
-            artifacts/*.zip
+            *.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
