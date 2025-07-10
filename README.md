@@ -1,11 +1,15 @@
 # golang-python-package-example
 
-Working example of how to publish a Golang executable as a Python package on PyPi.
+Working example of how to publish Golang executables as Python packages on PyPi.
+Based on [zig-pypi](https://github.com/ziglang/zig-pypi).
 Golang is great at building platform native binaries and PyPi one of the most widely available software distribution platforms.
 
 ## How This Works
 
-The process to create wheels has just a few steps:
+At a very high level, we create binaries for various platforms on CI and create wheels by hand for each.
+The approach here is adapted from [zig-pypi](https://github.com/ziglang/zig-pypi).
+
+In more detail, there are a few discrete steps:
 
 1. Run the `release_binaries.yml` workflow manually to build binaries for various platforms.
 
@@ -16,8 +20,8 @@ The process to create wheels has just a few steps:
 
     Note: In this repo, the code for the binaries is included. In a more realistic scenario, you might produce your binaries somewhere totally different and pull them in.
 
-2. Locally, run `create_wheels.py` to create wheels for each of the platforms in (1)
-3. Publish the created wheels to Test PyPi
+2. Locally, run `create_wheels.py` to create wheels for each of the platforms in (1). This could be done in CI.
+3. Publish the created wheels to Test PyPi. This could also be a done in CI.
 
     ```sh
     twine upload --repository testpypi out/*
@@ -26,6 +30,7 @@ The process to create wheels has just a few steps:
 4. Verify the wheels work by running the `test_wheels.yml` workflow.
 
     Note: PyPi takes a few minutes to index wheels so it may be best to wait a few minutes after (3) before moving on to this step.
+
     The workflow has two parameters:
 
     - `package_name`: The name of the package on Test PyPi (e.g., `mybin`)
