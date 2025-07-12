@@ -4,8 +4,35 @@
 #     "wheel",
 # ]
 # ///
-
+# create_wheels.py
+#
 # Adapted from https://github.com/ziglang/zig-pypi/blob/main/make_wheels.py
+#
+# Examples:
+#
+# Create wheels for all platforms for binary version 0.1
+#
+# ```
+# uv run python create_wheels.py --binary_version 0.1
+# ```
+#
+# Create wheels for only Linux amd64 for binary version 0.1
+#
+# ```
+# uv run python create_wheels.py --binary_version 0.1 --platform linux-amd64
+# ```
+#
+# Create wheels for only all amd64 platforms for binary version 0.1
+#
+# ```
+# uv run python create_wheels.py --binary_version 0.1 --platform amd64
+# ```
+#
+# Use a different wheel version than binary version
+#
+# ```
+# uv run python create_wheels.py --binary_version 0.1 --wheel_version 0.1.1
+# ```
 
 import argparse
 from email.message import EmailMessage
