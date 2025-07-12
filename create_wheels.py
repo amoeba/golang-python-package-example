@@ -17,6 +17,7 @@ import urllib.request
 import json
 from wheel.wheelfile import WheelFile
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
+from typing import List
 
 
 GITHUB_ORG = "amoeba"
@@ -221,7 +222,7 @@ def entry_point(): """This just gives us a name to import."""
     if missing_licenses:
         raise RuntimeError(f"Missing licenses: {missing_licenses}")
 
-    write_wheel(
+    path = write_wheel(
         OUT_DIR,
         name=PACKAGE_NAME,
         version=version,
@@ -240,22 +241,32 @@ def entry_point(): """This just gives us a name to import."""
         contents=contents,
     )
 
+    print(f"Created wheel {path}.")
 
-def create_wheels(binary_version, wheel_version):
+
+def create_wheels(platforms: List[str], binary_version: str, wheel_version: str):
     release_info = get_github_release(GITHUB_ORG, GITHUB_REPO, binary_version)
 
     if release_info is None:
         raise Exception(f"Release for version {binary_version} not found!")
 
     for asset in release_info["assets"]:
-        tokens = asset["name"].split("-")
+        asset_name = asset["name"]
+        tokens = asset_name.split("-")
         platform_os = tokens[1]
         platform_arch = tokens[2]
+
+        # Skip any assets we didn't specify
+        asset_platform = f"{platform_os}-{platform_arch}"
+        if asset_platform not in platforms:
+            print(f"Skipped {asset_name} because it wasn't in the provided list of platforms.  ")
+            continue
+
         version = ".".join(tokens[3].split(".")[:-1])
         assert version == binary_version, f"Version mismatch: {version} != {binary_version}"
         archive_url = asset["download_url"]
 
-        print(f"Creating wheel for asset: {asset}")
+        print(f"Creating wheel for asset: {asset_name}...")
 
         with urllib.request.urlopen(archive_url) as request:
             archive = request.read()
@@ -268,7 +279,7 @@ def create_wheels(binary_version, wheel_version):
                     f"Hash mismatch. Expected {expected_hash}, got {actual_hash}."
                 )
 
-        target_platform = PLATFORMS_MAP[f"{platform_os}-{platform_arch}"]
+        target_platform = PLATFORMS_MAP[f"{asset_platform}"]
         create_wheel(wheel_version, target_platform, archive)
 
 
@@ -283,13 +294,41 @@ def parse_args() -> argparse.ArgumentParser:
         default="same",
         help="Version to give the wheels. Defaults to using the same version as the binary but can be overridden.",
     )
-
+    parser.add_argument(
+        "--platform",
+        default="all",
+        help="Platform(s) to create wheels for. Defaults to 'all' which creates wheels for all supported platforms. Platform strings follow the pattern <GOOS>-<GOARCH> and a full platform string can be provided or just GOOS or GOARCH (e.g., linux-amd64, linux, amd64.). Multiple values can be separated with a comma.",
+    )
     return parser
+
+
+def parse_platforms(platforms: str) -> List[str]:
+    if platforms == "all":
+        return list(PLATFORMS_MAP.keys())
+
+    patterns = platforms.split(",")
+    matched = []
+    for platform in PLATFORMS_MAP.keys():
+        for pattern in patterns:
+            if platform == pattern:
+                matched.append(platform)
+
+            # Match either os or arch
+            os, arch = platform.split("-")
+            if pattern == os or pattern == arch:
+                matched.append(platform)
+
+    return matched
 
 
 def main():
     args = parse_args().parse_args()
-    create_wheels(args.binary_version, args.wheel_version)
+
+    platforms = parse_platforms(args.platform)
+    if len(platforms) <= 0:
+        raise RuntimeError("No platforms provided.")
+
+    create_wheels(platforms, args.binary_version, args.wheel_version)
 
 
 if __name__ == "__main__":
