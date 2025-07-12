@@ -67,7 +67,7 @@ PLATFORMS_MAP = {
 
 def get_github_release(repo_owner, repo_name, release_tag):
     """
-    Get release and asset information for a release by version.
+    Get release and asset information for a release by tag.
 
     Args:
         repo_owner (str): The owner of the GitHub repository.
