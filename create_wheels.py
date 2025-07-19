@@ -199,24 +199,28 @@ def create_wheel(version: str, platform: str, archive: bytes):
     bin_prefix = PACKAGE_NAME
     bin_found = False
 
+
+    # Copy all files from the source zip into the wheel
     for entry_name, entry_mode, entry_data in iter_archive_contents(archive):
         if not entry_name:
             continue
 
-        zip_info = ZipInfo(f"{PACKAGE_NAME}/{entry_name}")
+        # Treat the binary specially, putting it in the foo.v.data/scripts
+        # folder
+        if entry_name.startswith(bin_prefix):
+            bin_found = True
+            zip_info = ZipInfo(os.path.join(
+                f"{PACKAGE_NAME}-{version}.data",
+                "scripts",
+                PACKAGE_NAME
+            ))
+        else:
+            zip_info = ZipInfo(f"{PACKAGE_NAME}/{entry_name}")
+
         zip_info.external_attr = (entry_mode & 0xFFFF) << 16
         contents[zip_info] = entry_data
 
-        if entry_name.startswith(bin_prefix):
-            bin_found = True
-
-            data_dir = f'{PACKAGE_NAME}-{version}.data'
-            scripts_dir = os.path.join(data_dir, "scripts")
-            bin_info = ZipInfo(os.path.join(scripts_dir, PACKAGE_NAME))
-            bin_info.external_attr = (entry_mode & 0xFFFF) << 16
-            contents[bin_info] = entry_data
-
-        # Include license files
+        # Collect license files
         if entry_name in required_license_paths:
                 license_files[entry_name] = entry_data
                 found_license_files.add(entry_name)
