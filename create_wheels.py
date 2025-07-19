@@ -163,10 +163,6 @@ def write_wheel(out_dir, *, name, version, tag, metadata, description, contents)
         os.path.join(out_dir, wheel_name),
         {
             **contents,
-            f"{dist_info}/entry_points.txt": make_message(
-                [],
-                f"[console_scripts]\n{PACKAGE_NAME} = {PACKAGE_NAME}.__main__:entry_point",
-            ),
             f"{dist_info}/METADATA": make_message(
                 [
                     ("Metadata-Version", "2.4"),
@@ -201,7 +197,8 @@ def create_wheel(version: str, platform: str, archive: bytes):
 
     # Scan the binary archive and extract what we need from it
     bin_prefix = PACKAGE_NAME
-    bin_path = None
+    bin_found = False
+
     for entry_name, entry_mode, entry_data in iter_archive_contents(archive):
         if not entry_name:
             continue
@@ -211,31 +208,21 @@ def create_wheel(version: str, platform: str, archive: bytes):
         contents[zip_info] = entry_data
 
         if entry_name.startswith(bin_prefix):
-            bin_path = entry_name
+            bin_found = True
+
+            data_dir = f'{PACKAGE_NAME}-{version}.data'
+            scripts_dir = os.path.join(data_dir, "scripts")
+            bin_info = ZipInfo(os.path.join(scripts_dir, PACKAGE_NAME))
+            bin_info.external_attr = (entry_mode & 0xFFFF) << 16
+            contents[bin_info] = entry_data
 
         # Include license files
         if entry_name in required_license_paths:
                 license_files[entry_name] = entry_data
                 found_license_files.add(entry_name)
 
-    # Dynamcially create __main__.py
-    if bin_path is None:
-        raise RuntimeError("No binary found in archive")
-
-    contents[f"{PACKAGE_NAME}/__main__.py"] = (
-        f'''\
-import os, sys
-argv = [os.path.join(os.path.dirname(__file__), "{bin_path}"), *sys.argv[1:]]
-if os.name == 'posix':
-    os.execv(argv[0], argv)
-else:
-    import subprocess; sys.exit(subprocess.call(argv))
-
-def entry_point(): """This just gives us a name to import."""
-'''.encode(
-            "ascii"
-        )
-    )
+    if not bin_found:
+        raise RuntimeError("No binary found in archive. Stopping now.")
 
     # Set the content of the PyPi README as the description
     with open('README.pypi.md') as f:
@@ -353,6 +340,7 @@ def main():
     args = parse_args().parse_args()
 
     platforms = parse_platforms(args.platform)
+
     if len(platforms) <= 0:
         raise RuntimeError("No platforms provided.")
 
